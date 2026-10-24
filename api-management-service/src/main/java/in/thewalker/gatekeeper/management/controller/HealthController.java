@@ -1,0 +1,30 @@
+package in.thewalker.gatekeeper.management.controller;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import in.thewalker.gatekeeper.management.dto.responseDTO.HealthResponse;
+
+@RestController
+@RequestMapping("/health")
+public class HealthController {
+
+    private String serviceName;
+    private String serviceDescription;
+
+    public HealthController(@Value("${info.app.name}") String serviceName,
+                            @Value("${info.app.description}") String serviceDescription) {
+        this.serviceName = serviceName;
+        this.serviceDescription = serviceDescription;
+    }
+
+    @RequestMapping
+    public ResponseEntity<HealthResponse> healthCheck() {
+        // HealthResponse healthResponse = new HealthResponse(serviceName, serviceDescription, "UP");
+        // return ResponseEntity.ok(healthResponse); 
+        return ResponseEntity.ok(new HealthResponse(serviceName, serviceDescription, "UP"));
+    }
+
+}
