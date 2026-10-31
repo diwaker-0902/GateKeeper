@@ -10,6 +10,7 @@ import in.thewalker.gatekeeper.management.entity.ManagementUser;
 import in.thewalker.gatekeeper.management.entity.Organization;
 import in.thewalker.gatekeeper.management.entity.OrganizationStatus;
 import in.thewalker.gatekeeper.management.entity.Role;
+import in.thewalker.gatekeeper.management.event.GatewayConfigurationEventService;
 import in.thewalker.gatekeeper.management.exception.ApiException;
 import in.thewalker.gatekeeper.management.repository.ManagementUserRepository;
 import in.thewalker.gatekeeper.management.repository.OrganizationRepository;
@@ -32,17 +33,19 @@ public class OrganizationService {
     private final PasswordEncoder passwordEncoder;
     private final TenantContext tenantContext;
     private final AuditService auditService;
+    private final GatewayConfigurationEventService configurationEventService;
 
     public OrganizationService(OrganizationRepository organizationRepository,
                                ManagementUserRepository managementUserRepository, RoleRepository roleRepository,
                                PasswordEncoder passwordEncoder, TenantContext tenantContext,
-                               AuditService auditService) {
+                               AuditService auditService, GatewayConfigurationEventService configurationEventService) {
         this.organizationRepository = organizationRepository;
         this.managementUserRepository = managementUserRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
         this.tenantContext = tenantContext;
         this.auditService = auditService;
+        this.configurationEventService = configurationEventService;
     }
 
     @Transactional
@@ -96,6 +99,9 @@ public class OrganizationService {
                 "ORGANIZATION", id.toString(), startedAt,
                 "Organization name and slug updated");
 
+        // Trigger event
+        configurationEventService.publish("ORGANIZATION_UPDATED", organization.getId(), null, null);
+
         return OrganizationResponse.from(organization);
     }
 
@@ -115,6 +121,9 @@ public class OrganizationService {
                 "ORGANIZATION", id.toString(),
                 startedAt, "Status changed to " + request.getStatus());
 
+        // Trigger Event
+        configurationEventService.publish("ORGANIZATION_" + request.getStatus(), organization.getId(), null, null);
+
         return OrganizationResponse.from(organization);
     }
 
@@ -130,6 +139,10 @@ public class OrganizationService {
         auditService.record(organization, "DELETE_ORGANIZATION",
                 "ORGANIZATION", id.toString(), startedAt,
                 "Organization soft-deleted");
+
+        // Trigger Event
+        configurationEventService.publish("ORGANIZATION_DELETED", organization.getId(), 
+                            null, null);
     }
 
     @Transactional
